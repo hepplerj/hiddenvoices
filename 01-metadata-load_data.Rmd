@@ -1,0 +1,305 @@
+---
+title: "Subject headings metadata for title on women in STEM"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# Read and prepare data
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(stringi))
+suppressPackageStartupMessages(library(jahMisc))
+
+# Read data
+data_engineering <- read_csv("data/raw_data/Women and Engineering Data Set 9.22.2020.csv")
+data_math <- read_csv("data/raw_data/Women and Math Data Set 9.22.2020.csv")
+data_science <- read_csv("data/raw_data/Women and Science Data Set 9.22.2020.csv")
+data_tech <- read_csv("data/raw_data/Women and Technology Data Set 9.23.2020.csv")
+data_compsci <- read_csv("data/raw_data/Women Computer Scientists Data Set 9.23.2020.csv")
+data_engineers <- read_csv("data/raw_data/Women Engineers Data Set 9.25.2020.csv")
+data_mathematician <- read_csv("data/raw_data/mathematicians.csv")
+data_scientists <- read_csv("data/raw_data/Women Scientists Data Set 9.22.2020.csv")
+```
+
+```{r}
+# Data cleanup -----------------------------------------------------------------
+
+## Rename columns
+data_compsci_final <- data_compsci %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_compsci_final$data_type <- "compsci"
+
+data_engineering_final <- data_engineering %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_engineering_final$data_type <- "engineering"
+
+data_engineers_final <- data_engineers %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_engineers_final$data_type <- "engineers"
+
+data_math_final <- data_math %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_math_final$data_type <- "math"
+
+data_mathematician_final <- data_mathematician %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_mathematician_final$data_type <- "mathematician"
+
+data_science_final <- data_science %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_science_final$data_type <- "science"
+
+data_scientists_final <- data_scientists %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_scientists_final$data_type <- "scientists"
+
+data_tech_final <- data_tech %>%
+  rename(author = "Author") %>%
+  rename(title = "Title") %>%
+  rename(publisher = "Publisher") %>%
+  rename(date = "Date") %>% 
+  rename(year = "Publication Year") %>% 
+  rename(item_type = "Item Type") %>% 
+  rename(tags = "Manual Tags") %>% 
+  rename(key = "&#65279;\"Key\"")
+data_tech_final$data_type <- "tech"
+
+data_compsci_working <- data_compsci_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_engineering_working <- data_engineering_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_engineers_working <- data_engineers_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_math_working <- data_math_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_mathematician_working <- data_mathematician_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_science_working <- data_science_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_scientists_working <- data_scientists_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+data_tech_working <- data_tech_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+
+## Separate semicolon-delimited author list into individual rows.
+data_compsci_working <- separate_rows(data_compsci_working, author, sep = ";")
+data_compsci_working$author <- str_trim(data_compsci_working$author)
+
+data_engineering_working <- separate_rows(data_engineering_working, author, sep = ";")
+data_engineering_working$author <- str_trim(data_engineering_working$author)
+
+data_engineers_working <- separate_rows(data_engineers_working, author, sep = ";")
+data_engineers_working$author <- str_trim(data_engineers_working$author)
+
+data_math_working <- separate_rows(data_math_working, author, sep = ";")
+data_math_working$author <- str_trim(data_math_working$author)
+
+data_mathematician_working <- separate_rows(data_mathematician_working, author, sep = ";")
+data_mathematician_working$author <- str_trim(data_mathematician_working$author)
+
+data_science_working <- separate_rows(data_science_working, author, sep = ";")
+data_science_working$author <- str_trim(data_science_working$author)
+
+data_scientists_working <- separate_rows(data_scientists_working, author, sep = ";")
+data_scientists_working$author <- str_trim(data_scientists_working$author)
+
+data_tech_working <- separate_rows(data_tech_working, author, sep = ";")
+data_tech_working$author <- str_trim(data_tech_working$author)
+
+network_prep_data <- do.call("rbind", list(data_engineering_working, data_compsci_working, data_engineers_working, data_math_working, data_mathematician_working, data_science_working, data_scientists_working, data_tech_working))
+
+## Separate semicolon-delimited tags list into individual rows.
+data_compsci_working <- separate_rows(data_compsci_working, tags, sep = ";")
+data_compsci_working$tags <- stri_encode(data_compsci_working$tags, "", "UTF-8")
+data_compsci_working$tags <- str_trim(data_compsci_working$tags)
+
+data_engineering_working <- separate_rows(data_engineering_working, tags, sep = ";")
+data_engineering_working$tags <- stri_encode(data_engineering_working$tags, "", "UTF-8")
+data_engineering_working$tags <- str_trim(data_engineering_working$tags)
+
+data_engineers_working <- separate_rows(data_engineers_working, tags, sep = ";")
+data_engineers_working$tags <- stri_encode(data_engineers_working$tags, "", "UTF-8")
+data_engineers_working$tags <- str_trim(data_engineers_working$tags)
+
+data_math_working <- separate_rows(data_math_working, tags, sep = ";")
+data_math_working$tags <- stri_encode(data_math_working$tags, "", "UTF-8")
+data_math_working$tags <- str_trim(data_math_working$tags)
+
+data_mathematician_working <- separate_rows(data_mathematician_working, tags, sep = ";")
+data_mathematician_working$tags <- stri_encode(data_mathematician_working$tags, "", "UTF-8")
+data_mathematician_working$tags <- str_trim(data_mathematician_working$tags)
+
+data_science_working <- separate_rows(data_science_working, tags, sep = ";")
+data_science_working$tags <- stri_encode(data_science_working$tags, "", "UTF-8")
+data_science_working$tags <- str_trim(data_science_working$tags)
+
+data_scientists_working <- separate_rows(data_scientists_working, tags, sep = ";")
+data_scientists_working$tags <- stri_encode(data_scientists_working$tags, "", "UTF-8")
+data_scientists_working$tags <- str_trim(data_scientists_working$tags)
+
+data_tech_working <- separate_rows(data_tech_working, tags, sep = ";")
+data_tech_working$tags <- stri_encode(data_tech_working$tags, "", "UTF-8")
+data_tech_working$tags <- str_trim(data_tech_working$tags)
+
+## Join all databases together into one. This will be our final dataframe to
+## do our work from. 
+data <- do.call("rbind", list(data_engineering_working, data_compsci_working, data_engineers_working, data_math_working, data_mathematician_working, data_science_working, data_scientists_working, data_tech_working))
+
+## Cleanup
+rm(data_compsci, data_compsci_final, data_engineering, data_engineering_final, data_engineers, data_engineers_final, data_math, data_math_final, data_mathematician, data_mathematician_final, data_science, data_science_final, data_scientists, data_scientists_final, data_tech, data_tech_final, data_compsci_working, data_engineering_working, data_engineers_working, data_mathematician_working, data_math_working, data_science_working, data_scientists_working, data_tech_working)
+```
+
+## Counting all tags 
+
+```{r}
+data %>% group_by(tags) %>% tally(sort = T)
+top_tags <- data %>% group_by(tags) %>% tally(sort = T) %>% slice(1:10)
+```
+
+## Tag usage for each subject area
+
+```{r}
+ggplot(top_tags, aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags in the dataset.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "engineering") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for engineering.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "engineers") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for engineers.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "compsci") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for computer science.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "math") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for math.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "mathematician") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for mathematician.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "science") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for science.")
+```
+
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "scientists") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for scientists.")
+```
+
+```{r}
+ggplot(data %>% 
+         filter(data_type == "technology") %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:20), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for technology.")
+```

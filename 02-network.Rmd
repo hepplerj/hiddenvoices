@@ -1,0 +1,61 @@
+---
+title: "Co-Occurance"
+author: "Jason Heppler"
+date: "10/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Tag co-occurance
+
+```{r}
+suppressPackageStartupMessages(library(tidygraph))
+suppressPackageStartupMessages(library(ggraph))
+suppressPackageStartupMessages(library(network))
+suppressPackageStartupMessages(library(igraph))
+
+# Make a copy of master data file since we're altering data
+network_data <- network_prep_data
+network_data$id <- 1:nrow(network_data)
+
+cooccurance <- network_data %>%
+  select(id, tags) %>% 
+  unnest(tags = str_split(tags, ";"))
+
+cooccurance$tags <- stri_encode(cooccurance$tags, "", "UTF-8")
+cooccurance$tags <- str_trim(cooccurance$tags)
+
+edges <- cooccurance %>% 
+  select(tags, id) %>% 
+  dplyr::rename(to = id)
+
+nodes <- cooccurance %>% 
+  distinct(tags)# %>% 
+  #rowid_to_column('id')
+
+nodes <- nodes %>% 
+  left_join(cooccurance, by = "tags")
+
+## TODO: getting an error here
+edges <- edges %>% 
+  left_join(nodes, by = "id")# %>% 
+  #select(to, id.x)
+
+edges <- edges %>% dplyr::rename(from = id.x)
+
+nodes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+  
+graph_tidy <- nodes_tidy %>%
+  activate(nodes) %>%
+  mutate(degree = centrality_degree(),
+         group = group_infomap())
+
+ggraph(graph_tidy) +
+  geom_edge_link(alpha = 0.5) +
+  geom_node_point(alpha = 0.8) +
+  theme_graph()
+```
