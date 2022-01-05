@@ -1,6 +1,7 @@
 ---
 title: "Subject headings metadata for title on women in STEM"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -10,7 +11,12 @@ output:
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(stringi))
 suppressPackageStartupMessages(library(jahMisc))
+suppressPackageStartupMessages(library(RColorBrewer))
 
+theme_set(theme_roboto())
+```
+
+```{r}
 # Read data
 data_engineering <- read_csv("data/raw_data/Women and Engineering Data Set 9.22.2020.csv")
 data_math <- read_csv("data/raw_data/Women and Math Data Set 9.22.2020.csv")
@@ -113,6 +119,10 @@ data_tech_final <- data_tech %>%
   rename(tags = "Manual Tags") %>% 
   rename(key = "&#65279;\"Key\"")
 data_tech_final$data_type <- "tech"
+```
+
+```{r}
+# Narrow down
 
 data_compsci_working <- data_compsci_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
 data_engineering_working <- data_engineering_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
@@ -122,70 +132,55 @@ data_mathematician_working <- data_mathematician_final %>% select(author, title,
 data_science_working <- data_science_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
 data_scientists_working <- data_scientists_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
 data_tech_working <- data_tech_final %>% select(author, title, publisher, date, year, item_type, tags, key, data_type)
+```
 
-## Separate semicolon-delimited author list into individual rows.
-data_compsci_working <- separate_rows(data_compsci_working, author, sep = ";")
-data_compsci_working$author <- str_trim(data_compsci_working$author)
-
-data_engineering_working <- separate_rows(data_engineering_working, author, sep = ";")
-data_engineering_working$author <- str_trim(data_engineering_working$author)
-
-data_engineers_working <- separate_rows(data_engineers_working, author, sep = ";")
-data_engineers_working$author <- str_trim(data_engineers_working$author)
-
-data_math_working <- separate_rows(data_math_working, author, sep = ";")
-data_math_working$author <- str_trim(data_math_working$author)
-
-data_mathematician_working <- separate_rows(data_mathematician_working, author, sep = ";")
-data_mathematician_working$author <- str_trim(data_mathematician_working$author)
-
-data_science_working <- separate_rows(data_science_working, author, sep = ";")
-data_science_working$author <- str_trim(data_science_working$author)
-
-data_scientists_working <- separate_rows(data_scientists_working, author, sep = ";")
-data_scientists_working$author <- str_trim(data_scientists_working$author)
-
-data_tech_working <- separate_rows(data_tech_working, author, sep = ";")
-data_tech_working$author <- str_trim(data_tech_working$author)
-
-network_prep_data <- do.call("rbind", list(data_engineering_working, data_compsci_working, data_engineers_working, data_math_working, data_mathematician_working, data_science_working, data_scientists_working, data_tech_working))
-
+```{r}
 ## Separate semicolon-delimited tags list into individual rows.
 data_compsci_working <- separate_rows(data_compsci_working, tags, sep = ";")
+data_compsci_working <- separate_rows(data_compsci_working, tags, sep = " \b[A-Z].*?\b")
 data_compsci_working$tags <- stri_encode(data_compsci_working$tags, "", "UTF-8")
 data_compsci_working$tags <- str_trim(data_compsci_working$tags)
 
 data_engineering_working <- separate_rows(data_engineering_working, tags, sep = ";")
+data_engineering_working <- separate_rows(data_engineering_working, tags, sep = " \b[A-Z].*?\b")
 data_engineering_working$tags <- stri_encode(data_engineering_working$tags, "", "UTF-8")
 data_engineering_working$tags <- str_trim(data_engineering_working$tags)
 
 data_engineers_working <- separate_rows(data_engineers_working, tags, sep = ";")
+data_engineers_working <- separate_rows(data_engineers_working, tags, sep = " \b[A-Z].*?\b")
 data_engineers_working$tags <- stri_encode(data_engineers_working$tags, "", "UTF-8")
 data_engineers_working$tags <- str_trim(data_engineers_working$tags)
 
 data_math_working <- separate_rows(data_math_working, tags, sep = ";")
+data_math_working <- separate_rows(data_math_working, tags, sep = " \b[A-Z].*?\b")
 data_math_working$tags <- stri_encode(data_math_working$tags, "", "UTF-8")
 data_math_working$tags <- str_trim(data_math_working$tags)
 
 data_mathematician_working <- separate_rows(data_mathematician_working, tags, sep = ";")
+data_mathematician_working <- separate_rows(data_mathematician_working, tags, sep = " \b[A-Z].*?\b")
 data_mathematician_working$tags <- stri_encode(data_mathematician_working$tags, "", "UTF-8")
 data_mathematician_working$tags <- str_trim(data_mathematician_working$tags)
 
 data_science_working <- separate_rows(data_science_working, tags, sep = ";")
+data_science_working <- separate_rows(data_science_working, tags, sep = " \b[A-Z].*?\b")
 data_science_working$tags <- stri_encode(data_science_working$tags, "", "UTF-8")
 data_science_working$tags <- str_trim(data_science_working$tags)
 
 data_scientists_working <- separate_rows(data_scientists_working, tags, sep = ";")
+data_scientists_working <- separate_rows(data_scientists_working, tags, sep = " \b[A-Z].*?\b")
 data_scientists_working$tags <- stri_encode(data_scientists_working$tags, "", "UTF-8")
 data_scientists_working$tags <- str_trim(data_scientists_working$tags)
 
 data_tech_working <- separate_rows(data_tech_working, tags, sep = ";")
+data_tech_working <- separate_rows(data_tech_working, tags, sep = " \b[A-Z].*?\b")
 data_tech_working$tags <- stri_encode(data_tech_working$tags, "", "UTF-8")
 data_tech_working$tags <- str_trim(data_tech_working$tags)
 
 ## Join all databases together into one. This will be our final dataframe to
 ## do our work from. 
 data <- do.call("rbind", list(data_engineering_working, data_compsci_working, data_engineers_working, data_math_working, data_mathematician_working, data_science_working, data_scientists_working, data_tech_working))
+
+data$tags <- str_replace_all(data$tags, "[[:punct:]]", "")
 
 ## Cleanup
 rm(data_compsci, data_compsci_final, data_engineering, data_engineering_final, data_engineers, data_engineers_final, data_math, data_math_final, data_mathematician, data_mathematician_final, data_science, data_science_final, data_scientists, data_scientists_final, data_tech, data_tech_final, data_compsci_working, data_engineering_working, data_engineers_working, data_mathematician_working, data_math_working, data_science_working, data_scientists_working, data_tech_working)
@@ -198,17 +193,45 @@ data %>% group_by(tags) %>% tally(sort = T)
 top_tags <- data %>% group_by(tags) %>% tally(sort = T) %>% slice(1:10)
 ```
 
-## Tag usage for each subject area
+## Tag usage for subject areas
+
+How many tags exist for "women scientists" under our "scientists" type?
 
 ```{r}
-ggplot(top_tags, aes(x = reorder(tags, -n), y = n)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags in the dataset.")
+data %>% select(title, tags, data_type) %>% group_by(tags) %>% filter(tags == "Women scientists", data_type == "scientists") %>% tally(sort = T)
+```
+
+How many tags exist for "women scientists, women, frau, vrowen" for the "scientists" type?
+
+```{r}
+data %>% select(title, tags, data_type) %>% group_by(tags) %>% filter(
+  tags == "Women scientists",
+  data_type == "scientists"
+  ) %>% 
+  tally(sort = T)
 ```
 
 ```{r}
-ggplot(data %>% 
+top_tags_plot <- ggplot(top_tags, aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  #geom_text(aes(label=n), position=position_dodge(width=0.9), vjust=-0.25) +
+  geom_text(aes(y=n+12,label=paste(n)),position = position_dodge(.9), family="mono") + 
+  labs(x = "Subject terms", y ="Total", title = "Top ten subject terms in the dataset.") +
+  theme_roboto() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+top_tags_plot
+
+ggsave(filename = "results/top_tags.png", plot = top_tags_plot, width = 18, height = 16, units = "cm")
+```
+
+How many distinct works are in this dataset? 
+
+```{r}
+data %>% select(title, data_type) %>% filter(data_type == "scientists") %>% distinct() %>% count()
+```
+
+```{r}
+engineering_plot <- ggplot(data %>% 
          filter(data_type == "engineering") %>% 
          group_by(tags) %>% 
          tally(sort = T) %>% 
@@ -216,7 +239,25 @@ ggplot(data %>%
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for engineering.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for engineering.")
+engineering_plot
+
+ggsave(filename = "results/engineering.png", plot = engineering_plot, width = 18, height = 16, units = "cm")
+```
+
+"women scientists" tags
+
+```{r}
+women_scientists_type_plot <- ggplot(data %>% 
+         filter(tags == "Women scientists") %>% 
+         group_by(data_type),
+       aes(x = data_type)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Subject terms", y ="Total", title = "Count of the 'women scientists' subject heading by type.")
+women_scientists_type_plot
+
+ggsave(filename = "results/women_scientists_type.png", plot = women_scientists_type_plot, width = 18, height = 16, units = "cm")
 ```
 
 ```{r}
@@ -228,7 +269,7 @@ ggplot(data %>%
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for engineers.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for engineers.")
 ```
 
 ```{r}
@@ -240,7 +281,7 @@ ggplot(data %>%
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for computer science.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for computer science.")
 ```
 
 ```{r}
@@ -252,11 +293,11 @@ ggplot(data %>%
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for math.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for math.")
 ```
 
 ```{r}
-ggplot(data %>% 
+mathematician_plot <- ggplot(data %>% 
          filter(data_type == "mathematician") %>% 
          group_by(tags) %>% 
          tally(sort = T) %>% 
@@ -264,7 +305,10 @@ ggplot(data %>%
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for mathematician.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for mathematician.")
+mathematician_plot
+
+ggsave(filename = "results/mathematician.png", plot = mathematician_plot, width = 18, height = 16, units = "cm")
 ```
 
 ```{r}
@@ -275,31 +319,76 @@ ggplot(data %>%
          slice(1:20), 
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for science.")
+  geom_text(aes(y=n+2,label=paste(n)),position = position_dodge(.9), family="mono") + 
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for women in science.") +
+  theme_roboto() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
+Those areas tagged as "scientists" and the subject terms applied to them.
 
 ```{r}
-ggplot(data %>% 
+scientists_plot <- ggplot(data %>% 
          filter(data_type == "scientists") %>% 
          group_by(tags) %>% 
          tally(sort = T) %>% 
          slice(1:20), 
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for scientists.")
+  geom_text(aes(y=n+3,label=paste(n)),position = position_dodge(.9), family="mono") + 
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for the 'scientists' subject area.") +
+  theme_roboto() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+scientists_plot
+
+ggsave(filename = "results/scientists.png", plot = scientists_plot, width = 18, height = 16, units = "cm")
 ```
 
 ```{r}
 ggplot(data %>% 
-         filter(data_type == "technology") %>% 
+         filter(data_type == "tech") %>% 
          group_by(tags) %>% 
          tally(sort = T) %>% 
          slice(1:20), 
        aes(x = reorder(tags, -n), y = n)) +
   geom_bar(stat="identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Subject tags", y ="Total", title = "Top twenty tags for technology.")
+  labs(x = "Subject terms", y ="Total", title = "Top twenty subject terms for technology.")
+```
+
+
+## Word cloud of the long tail 
+
+```{r}
+library(wordcloud)
+library(wordcloud2)
+library(RColorBrewer)
+library(tm)
+
+pal2 <- brewer.pal(8,"Dark2")
+
+freq <- data %>% filter(data_type == "scientists") %>% group_by(tags) %>% tally(sort = TRUE)
+names(freq) <- c("word", "freq")
+
+wc <- wordcloud2(freq)
+wc
+```
+
+
+```{r}
+tail <- ggplot(data %>% 
+         group_by(tags) %>% 
+         tally(sort = T) %>% 
+         slice(1:300), 
+       aes(x = reorder(tags, -n), y = n)) +
+  geom_bar(stat="identity") +
+  labs(x = "Subject terms", y ="Total", title = "The long tail of subject headings for the top 300 subject headings") +
+  theme_roboto() + 
+  theme(axis.text.x = element_blank(),
+        plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank())
+tail
+
+ggsave(filename = "results/long_tail.png", plot = tail, width = 18, height = 16, units = "cm")
 ```
