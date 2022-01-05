@@ -13,49 +13,137 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Tag co-occurance
 
 ```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(tidytext))
+suppressPackageStartupMessages(library(widyr))
+
 suppressPackageStartupMessages(library(tidygraph))
 suppressPackageStartupMessages(library(ggraph))
 suppressPackageStartupMessages(library(network))
 suppressPackageStartupMessages(library(igraph))
-
-# Make a copy of master data file since we're altering data
-network_data <- network_prep_data
-network_data$id <- 1:nrow(network_data)
-
-cooccurance <- network_data %>%
-  select(id, tags) %>% 
-  unnest(tags = str_split(tags, ";"))
-
-cooccurance$tags <- stri_encode(cooccurance$tags, "", "UTF-8")
-cooccurance$tags <- str_trim(cooccurance$tags)
-
-edges <- cooccurance %>% 
-  select(tags, id) %>% 
-  dplyr::rename(to = id)
-
-nodes <- cooccurance %>% 
-  distinct(tags)# %>% 
-  #rowid_to_column('id')
-
-nodes <- nodes %>% 
-  left_join(cooccurance, by = "tags")
-
-## TODO: getting an error here
-edges <- edges %>% 
-  left_join(nodes, by = "id")# %>% 
-  #select(to, id.x)
-
-edges <- edges %>% dplyr::rename(from = id.x)
-
-nodes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
-  
-graph_tidy <- nodes_tidy %>%
-  activate(nodes) %>%
-  mutate(degree = centrality_degree(),
-         group = group_infomap())
-
-ggraph(graph_tidy) +
-  geom_edge_link(alpha = 0.5) +
-  geom_node_point(alpha = 0.8) +
-  theme_graph()
 ```
+
+## Word Co-Occurance
+
+```{r}
+data_keyword <- tibble(id = data$key, 
+                       keyword = data$tags) %>%
+  unnest(keyword)
+```
+
+Check that we're getting consistent counts. 
+
+```{r}
+data_keyword %>%
+  count(keyword, sort = TRUE)
+```
+
+To remove duplicates due to capitalization, we lowercase everything. 
+
+```{r}
+data_keyword <- data_keyword %>% 
+  mutate(keyword = tolower(keyword))
+```
+
+### Word Co-occurences and correlations
+
+```{r}
+word_pairs <- data_keyword %>% 
+  pairwise_count(keyword, id, sort = TRUE, upper = FALSE)
+word_pairs
+```
+
+Plotting these keyword pairs. 
+
+```{r}
+library(ggplot2)
+library(igraph)
+library(ggraph)
+
+set.seed(1234)
+network_word_pairs <- word_pairs %>%
+  filter(n >= 20) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "steelblue") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+
+network_word_pairs
+
+ggsave(filename = "results/network_wordpairs.png", plot = network_word_pairs, width = 18, height = 16, units = "cm")
+```
+
+## Network of Keywords
+
+```{r}
+keyword_pairs <- data_keyword %>% 
+  pairwise_count(keyword, id, sort = TRUE, upper = FALSE)
+
+keyword_pairs
+
+set.seed(1234)
+network_keyword_pairs <- keyword_pairs %>%
+  filter(n >= 2) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "royalblue") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+network_keyword_pairs
+
+#ggsave(filename = "results/network_keywordpairs.png", plot = network_keyword_pairs, width = 22, height = 16, units = "cm")
+```
+We can also look at the correlation of keywords. 
+
+```{r}
+keyword_cors <- data_keyword %>% 
+  group_by(keyword) %>%
+  filter(n() >= 50) %>%
+  pairwise_cor(keyword, id, sort = TRUE, upper = FALSE)
+
+keyword_cors
+```
+
+Let's visualize keyword correlations. 
+
+```{r}
+set.seed(1234)
+network_keywordcors <- keyword_cors %>%
+  filter(correlation >= .0) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+
+network_keywordcors
+
+ggsave(filename = "results/network_keywordcors.png", plot = network_keywordcors, width = 18, height = 16, units = "cm")
+```
+
+
+Let's also look at keywords that *don't* correlate often together. 
+
+```{r}
+set.seed(1234)
+network_keyword_neg_cors <- keyword_cors %>%
+  filter(correlation <= -.0) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+network_keyword_neg_cors
+
+ggsave(filename = "results/network_keyword_neg_cors.png", plot = network_keyword_neg_cors, width = 18, height = 16, units = "cm")
+```
+
